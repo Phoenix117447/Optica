@@ -6,15 +6,15 @@ package co.uis.logica;
 
 import co.uis.persistencia.ConexionBD;
 import java.io.IOException;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 
 @WebServlet(name = "IniciarSesion", urlPatterns = {"/IniciarSesion"})
 public class IniciarSesion extends HttpServlet {
@@ -28,15 +28,12 @@ public class IniciarSesion extends HttpServlet {
         String cedula = request.getParameter("cedula");
 
         // Validar los parámetros
-        if (nombre == null || cedula == null || nombre.isEmpty() || cedula.isEmpty()) {
+        if (nombre == null || cedula == null) {
             response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Todos los campos son obligatorios.");
             return;
         }
 
         try {
-            // Convertir la cédula a long
-            long cedulaLong = Long.parseLong(cedula);
-
             // Crear instancia de la clase ConexionBD para obtener la conexión
             ConexionBD conexionBD = new ConexionBD();
             Connection connection = conexionBD.getConnection();
@@ -45,15 +42,18 @@ public class IniciarSesion extends HttpServlet {
             String sql = "SELECT * FROM usuarios WHERE nombre = ? AND cedula = ?";
             try (PreparedStatement statement = connection.prepareStatement(sql)) {
                 statement.setString(1, nombre);
-                statement.setLong(2, cedulaLong);
+                statement.setInt(2, Integer.parseInt(cedula)); // Convertir cédula a int
 
-                // Ejecutar la consulta
                 try (ResultSet resultSet = statement.executeQuery()) {
                     if (resultSet.next()) {
-                        // Credenciales válidas - Redirigir a Usuario.html
+                        // Inicio de sesión exitoso
+                        // Guardar la cédula en la sesión
+                        request.getSession().setAttribute("cedulaUsuario", cedula);
+
+                        // Redirigir a Usuario.html
                         response.sendRedirect("Usuario.html");
                     } else {
-                        // Credenciales inválidas
+                        // Credenciales incorrectas
                         response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Credenciales incorrectas.");
                     }
                 }
@@ -62,10 +62,7 @@ public class IniciarSesion extends HttpServlet {
             response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Error de base de datos: " + e.getMessage());
         } catch (NumberFormatException e) {
             response.sendError(HttpServletResponse.SC_BAD_REQUEST, "La cédula debe ser un número válido.");
-        } finally {
-            // Cerrar la conexión
-            ConexionBD conexionBD = new ConexionBD();
-            conexionBD.cerrarConexion();
         }
     }
 }
+
