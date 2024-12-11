@@ -1,0 +1,5 @@
+co\uis\logica\IniciarSesion.class
+co\uis\logica\CRUDUsuario.class
+co\uis\logica\RegistrarUsuario.class
+co\uis\persistencia\ConexionBD.class
+co\uis\logica\Usuario.class
