@@ -18,48 +18,34 @@ import java.sql.SQLException;
 @WebServlet(name = "RegistrarConsultaMedica", urlPatterns = {"/RegistrarConsultaMedica"})
 public class RegistrarConsultaMedica extends HttpServlet {
 
-    @Override
+       @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-
-        // Obtener parámetros del formulario
-        String fechaHora = request.getParameter("fechaHora");
-
-        // Obtener cédula del usuario desde la sesión
-        String cedulaUsuarioString = (String) request.getSession().getAttribute("cedulaUsuario");
-
-        // Validar los parámetros
-        if (fechaHora == null || cedulaUsuarioString == null) {
-            response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Datos incompletos.");
-            return;
-        }
+        // Obtener los datos enviados en el body de la solicitud
+        String cedulaUsuario = request.getParameter("cedula_usuario");
+        String fechaHora = request.getParameter("fecha_hora");
 
         try {
-            // Convertir cedulaUsuario a int
-            int cedulaUsuario = Integer.parseInt(cedulaUsuarioString);
-
-            // Crear instancia de la clase ConexionBD para obtener la conexión
+            // Crear la conexión a la base de datos
             ConexionBD conexionBD = new ConexionBD();
             Connection connection = conexionBD.getConnection();
 
-            // Consulta SQL para insertar la consulta médica
+            // Insertar la consulta en la base de datos
             String sql = "INSERT INTO consultamedica (cedula_usuario, fecha_hora) VALUES (?, ?)";
             try (PreparedStatement statement = connection.prepareStatement(sql)) {
-                statement.setInt(1, cedulaUsuario); // Usar setInt para cedula_usuario
+                statement.setInt(1, Integer.parseInt(cedulaUsuario));
                 statement.setString(2, fechaHora);
 
-                // Ejecutar la consulta
                 int rowsInserted = statement.executeUpdate();
                 if (rowsInserted > 0) {
-                    response.getWriter().println("Consulta médica registrada con éxito.");
+                    response.getWriter().write("{\"success\": true}");
                 } else {
-                    response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Error al registrar la consulta.");
+                    response.getWriter().write("{\"success\": false}");
                 }
             }
-        } catch (NumberFormatException e) {
-            response.sendError(HttpServletResponse.SC_BAD_REQUEST, "La cédula debe ser un número válido.");
         } catch (SQLException e) {
             response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Error de base de datos: " + e.getMessage());
         }
     }
 }
+
